@@ -1,22 +1,20 @@
-import { Navigate, Outlet } from 'react-router-dom'
-import { useSelector } from 'react-redux'
-import { RootState } from '@/store'
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 
 interface AuthGuardProps {
-  allowedRoles?: string[]
+  allowedRoles?: string[];
 }
 
 export const AuthGuard = ({ allowedRoles }: AuthGuardProps) => {
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
+  const { isAuthenticated, role } = useAuthStore();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    // Redirect to an unauthorized page or appropriate dashboard
-    return <Navigate to="/unauthorized" replace />
+  if (allowedRoles && role && !allowedRoles.includes(role)) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
-  return <Outlet />
-}
+  return <Outlet />;
+};

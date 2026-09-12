@@ -1,44 +1,41 @@
-import axios from 'axios'
-import { store, logout } from '@/store'
+import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
-// API Gateway base URL via Vite proxy
-const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-})
+  withCredentials: true,
+});
 
-// Request Interceptor to add JWT
 api.interceptors.request.use(
   (config) => {
-    const token = store.getState().auth.token
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    const { accessToken } = useAuthStore.getState();
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
-    return config
+    return config;
   },
   (error) => Promise.reject(error)
-)
+);
 
-// Response Interceptor for global error handling
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config
+    const originalRequest = error.config;
 
-    // Handle 401 Unauthorized globally
+    // We can implement refresh token logic here if we get 401
+    // For Phase 1 simplified, we just clear auth and redirect to login if 401
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-      
-      // Attempt refresh token logic here in production
-      // For now, logout user
-      store.dispatch(logout())
-      window.location.href = '/login'
+      originalRequest._retry = true;
+      const { clearAuth } = useAuthStore.getState();
+      clearAuth();
+      window.location.href = '/login';
     }
 
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
+);
